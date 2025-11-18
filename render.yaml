@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: medindex-api
+    env: node
+    plan: starter
+    buildCommand: pnpm install --filter api... --filter @medindex/* && pnpm --filter api build
+    startCommand: node dist/main.js
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase: medindex-db
+      - key: VECTOR_DB_URL
+        fromDatabase: medindex-db
+      - key: HUGGINGFACE_API_URL
+        value: https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2
+      - key: HUGGINGFACE_API_TOKEN
+        sync: false
+  - type: cron
+    name: medindex-ingest
+    schedule: '0 6 * * *'
+    env: node
+    command: pnpm --filter @medindex/data ingest
+
+databases:
+  - name: medindex-db
+    plan: starter

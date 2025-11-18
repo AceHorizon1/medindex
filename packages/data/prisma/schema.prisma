@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model MedicalSchool {
+  id             String   @id @default(cuid())
+  name           String   @unique
+  designation    String   // MD or DO
+  state          String
+  city           String
+  website        String?
+  mission        String?
+  accreditation  String?
+  primaryType    String?  // public/private
+  avgGpa         Float?
+  avgMcat        Int?
+  tuitionInState Int?
+  tuitionOutState Int?
+  acceptanceRate Float?
+  classSize      Int?
+  primaryCareRank Int?
+  researchRank    Int?
+  favFocus        String?
+  stats          SchoolStat[]
+  prerequisites  SchoolPrerequisite[]
+  windows        ApplicationWindow[]
+  matchProfiles  MatchProfile[]
+  vectorChunks   VectorChunk[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model SchoolStat {
+  id        String   @id @default(cuid())
+  schoolId  String
+  label     String
+  value     String
+  year      Int?
+  MedicalSchool MedicalSchool @relation(fields: [schoolId], references: [id])
+}
+
+model SchoolPrerequisite {
+  id        String   @id @default(cuid())
+  schoolId  String
+  subject   String
+  credits   Int?
+  notes     String?
+  MedicalSchool MedicalSchool @relation(fields: [schoolId], references: [id])
+}
+
+model ApplicationWindow {
+  id        String   @id @default(cuid())
+  schoolId  String
+  phase     String
+  opensOn   DateTime?
+  closesOn  DateTime?
+  MedicalSchool MedicalSchool @relation(fields: [schoolId], references: [id])
+}
+
+model MatchProfile {
+  id        String   @id @default(cuid())
+  schoolId  String
+  mcatRange String?
+  gpaRange  String?
+  emphasis  String?
+  MedicalSchool MedicalSchool @relation(fields: [schoolId], references: [id])
+}
+
+model VectorChunk {
+  id        String   @id @default(cuid())
+  schoolId  String
+  source    String
+  content   String
+  embedding Float[]
+  metadata  Json
+  MedicalSchool MedicalSchool @relation(fields: [schoolId], references: [id])
+  @@index([schoolId])
+}
+
+model PersonalStatementFeedback {
+  id          String   @id @default(cuid())
+  userId      String
+  statementId String
+  rubricScore Float
+  summary     String
+  suggestions Json
+  createdAt   DateTime @default(now())
+}

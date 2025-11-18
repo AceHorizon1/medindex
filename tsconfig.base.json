@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@medindex/ui/*": ["packages/ui/src/*"],
+      "@medindex/data/*": ["packages/data/src/*"],
+      "@medindex/ai/*": ["packages/ai/src/*"],
+      "@medindex/config": ["packages/config/src/index.ts"],
+      "@medindex/config/*": ["packages/config/src/*"]
+    }
+  },
+  "include": ["packages", "apps", "scripts"]
+}
