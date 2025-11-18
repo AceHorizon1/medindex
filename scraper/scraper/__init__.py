@@ -1,0 +1,2 @@
+# Scrapy project package
+
