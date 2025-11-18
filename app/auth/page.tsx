@@ -49,10 +49,10 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-12 flex items-center justify-center min-h-[calc(100vh-200px)]">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 flex items-center justify-center min-h-[calc(100vh-200px)]">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>{isSignUp ? 'Sign Up' : 'Sign In'}</CardTitle>
+        <CardHeader className="space-y-2">
+          <CardTitle className="text-2xl">{isSignUp ? 'Sign Up' : 'Sign In'}</CardTitle>
           <CardDescription>
             {isSignUp
               ? 'Create an account to save favorite schools'
@@ -102,4 +102,3 @@ export default function AuthPage() {
     </div>
   );
 }
-

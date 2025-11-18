@@ -49,15 +49,15 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Search Medical Schools</h1>
-        <p className="text-muted-foreground">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="mb-6 sm:mb-8 space-y-2">
+        <h1 className="text-2xl sm:text-3xl font-bold">Search Medical Schools</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">
           Use filters to find schools that match your criteria
         </p>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[300px_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
         <div className="lg:sticky lg:top-20 lg:h-fit">
           <SchoolFilters
             filters={filters}
@@ -78,7 +78,7 @@ export default function SearchPage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {schools.map((school) => (
                 <SchoolCard key={school.id} school={school} />
               ))}

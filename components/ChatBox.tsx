@@ -113,19 +113,19 @@ export function ChatBox({ systemPrompt }: ChatBoxProps) {
   };
 
   return (
-    <Card className="flex flex-col h-[600px]">
-      <CardHeader>
-        <CardTitle>AI Advisor Chat</CardTitle>
+    <Card className="flex flex-col h-[500px] sm:h-[600px]">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg sm:text-xl">AI Advisor Chat</CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
+      <CardContent className="flex-1 flex flex-col overflow-hidden p-4 sm:p-6">
+        <div className="flex-1 overflow-y-auto space-y-3 sm:space-y-4 mb-4 pr-2">
           {messages.map((msg, idx) => (
             <div
               key={idx}
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                className={`max-w-[85%] sm:max-w-[80%] rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base ${
                   msg.role === 'user'
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-muted text-muted-foreground'
@@ -137,7 +137,7 @@ export function ChatBox({ systemPrompt }: ChatBoxProps) {
           ))}
           {loading && (
             <div className="flex justify-start">
-              <div className="bg-muted text-muted-foreground rounded-lg px-4 py-2">
+              <div className="bg-muted text-muted-foreground rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base">
                 <span className="animate-pulse">Thinking...</span>
               </div>
             </div>
@@ -151,8 +151,9 @@ export function ChatBox({ systemPrompt }: ChatBoxProps) {
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder="Ask a question..."
             disabled={loading}
+            className="text-sm sm:text-base"
           />
-          <Button onClick={handleSend} disabled={loading || !input.trim()}>
+          <Button onClick={handleSend} disabled={loading || !input.trim()} size="icon" className="shrink-0">
             <Send className="h-4 w-4" />
           </Button>
         </div>
@@ -160,4 +161,3 @@ export function ChatBox({ systemPrompt }: ChatBoxProps) {
     </Card>
   );
 }
-

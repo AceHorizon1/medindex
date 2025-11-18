@@ -15,20 +15,20 @@ export default function HomePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="max-w-4xl mx-auto text-center space-y-8">
-        <div className="space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <div className="max-w-4xl mx-auto text-center space-y-6 sm:space-y-8">
+        <div className="space-y-3 sm:space-y-4">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
             Find Your Perfect Medical School
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
             Search, compare, and get AI-guided insights on every U.S. MD/DO medical school. Make
             informed decisions with comprehensive data and expert advice.
           </p>
         </div>
 
-        <form action={handleSearch} className="max-w-2xl mx-auto">
-          <div className="flex gap-2">
+        <form action={handleSearch} className="max-w-2xl mx-auto px-4">
+          <div className="flex flex-col sm:flex-row gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -38,15 +38,15 @@ export default function HomePage() {
                 className="pl-10"
               />
             </div>
-            <Button type="submit">Search</Button>
+            <Button type="submit" className="w-full sm:w-auto">Search</Button>
           </div>
         </form>
 
-        <div className="grid gap-6 md:grid-cols-3 pt-12">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 pt-8 sm:pt-12 px-4">
           <Card>
             <CardHeader>
-              <CardTitle>Comprehensive Database</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg sm:text-xl">Comprehensive Database</CardTitle>
+              <CardDescription className="text-sm">
                 Access detailed information on all accredited MD and DO programs in the United
                 States
               </CardDescription>
@@ -62,8 +62,8 @@ export default function HomePage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Side-by-Side Comparison</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg sm:text-xl">Side-by-Side Comparison</CardTitle>
+              <CardDescription className="text-sm">
                 Compare tuition, requirements, stats, and more across multiple schools
               </CardDescription>
             </CardHeader>
@@ -76,10 +76,10 @@ export default function HomePage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="sm:col-span-2 lg:col-span-1">
             <CardHeader>
-              <CardTitle>AI-Powered Advisor</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg sm:text-xl">AI-Powered Advisor</CardTitle>
+              <CardDescription className="text-sm">
                 Get personalized guidance from our AI advisor trained on medical school admissions
               </CardDescription>
             </CardHeader>
@@ -96,4 +96,3 @@ export default function HomePage() {
     </div>
   );
 }
-

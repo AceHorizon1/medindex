@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { getSchoolById } from '@/lib/supabase/queries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Calendar, BookOpen, DollarSign, Target } from 'lucide-react';
+import { ExternalLink, Calendar, BookOpen, Target } from 'lucide-react';
 import Link from 'next/link';
 
 export default async function SchoolPage({ params }: { params: Promise<{ id: string }> }) {
@@ -18,22 +18,22 @@ export default async function SchoolPage({ params }: { params: Promise<{ id: str
     | null;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="mb-6">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-4xl">
+      <div className="mb-6 space-y-4">
         <Link href="/search">
-          <Button variant="ghost" className="mb-4">
+          <Button variant="ghost" className="mb-2">
             ← Back to Search
           </Button>
         </Link>
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold mb-2">{school.name}</h1>
-            <p className="text-lg text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">{school.name}</h1>
+            <p className="text-base sm:text-lg text-muted-foreground">
               {school.type} • {school.location}
             </p>
           </div>
           {school.link && (
-            <Button asChild>
+            <Button asChild className="w-full sm:w-auto">
               <a href={school.link} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Visit Website
@@ -43,10 +43,10 @@ export default async function SchoolPage({ params }: { params: Promise<{ id: str
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 mb-6">
+      <div className="grid gap-6 sm:grid-cols-2 mb-6">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <Target className="h-5 w-5" />
               Statistics
             </CardTitle>
@@ -72,7 +72,7 @@ export default async function SchoolPage({ params }: { params: Promise<{ id: str
         {deadlines && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <Calendar className="h-5 w-5" />
                 Deadlines
               </CardTitle>
@@ -137,4 +137,3 @@ export default async function SchoolPage({ params }: { params: Promise<{ id: str
     </div>
   );
 }
-

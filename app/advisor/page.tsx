@@ -2,10 +2,10 @@ import { ChatBox } from '@/components/ChatBox';
 
 export default function AdvisorPage() {
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">AI Medical School Advisor</h1>
-        <p className="text-muted-foreground">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-4xl">
+      <div className="mb-6 sm:mb-8 space-y-2">
+        <h1 className="text-2xl sm:text-3xl font-bold">AI Medical School Advisor</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">
           Get personalized guidance on medical school selection, application strategies, MCAT
           preparation, and more. Our AI advisor is trained to help pre-med students make informed
           decisions.
@@ -18,4 +18,3 @@ export default function AdvisorPage() {
     </div>
   );
 }
-

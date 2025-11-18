@@ -52,7 +52,7 @@ export default function ComparePage() {
 
   if (school1 && school2) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="mb-6">
           <Button
             variant="outline"
@@ -67,10 +67,10 @@ export default function ComparePage() {
           </Button>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 mb-6">
+        <div className="grid gap-6 sm:grid-cols-2 mb-6">
           <Card>
             <CardHeader>
-              <CardTitle>{school1.name}</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">{school1.name}</CardTitle>
               <CardDescription>
                 {school1.type} • {school1.location}
               </CardDescription>
@@ -107,7 +107,7 @@ export default function ComparePage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>{school2.name}</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">{school2.name}</CardTitle>
               <CardDescription>
                 {school2.type} • {school2.location}
               </CardDescription>
@@ -148,7 +148,9 @@ export default function ComparePage() {
             <CardTitle>Side-by-Side Comparison</CardTitle>
           </CardHeader>
           <CardContent>
-            <SchoolTable schools={[school1, school2]} />
+            <div className="overflow-x-auto">
+              <SchoolTable schools={[school1, school2]} />
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -156,10 +158,10 @@ export default function ComparePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold mb-2">Compare Schools</h1>
-        <p className="text-muted-foreground">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-2xl">
+      <div className="mb-6 sm:mb-8 text-center space-y-2">
+        <h1 className="text-2xl sm:text-3xl font-bold">Compare Schools</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">
           Enter the IDs of two schools to see a detailed side-by-side comparison. You can find
           school IDs on the school profile pages.
         </p>
