@@ -43,6 +43,9 @@ export function ChatBox({ systemPrompt }: ChatBoxProps) {
     setInput('');
     setLoading(true);
 
+    // Add placeholder assistant message
+    setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -55,58 +58,104 @@ export function ChatBox({ systemPrompt }: ChatBoxProps) {
         })
       });
 
-      if (!response.ok) throw new Error('Failed to get response');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || 'Failed to get response');
+      }
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let assistantMessage = '';
+      let buffer = '';
 
       if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              // Stream ended successfully
+              break;
+            }
 
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            
+            // Keep the last incomplete line in buffer
+            buffer = lines.pop() || '';
 
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6);
-              if (data === '[DONE]') break;
-
-              try {
-                const parsed = JSON.parse(data);
-                if (parsed.content) {
-                  assistantMessage += parsed.content;
-                  setMessages((prev) => {
-                    const newMessages = [...prev];
-                    if (newMessages[newMessages.length - 1]?.role === 'assistant') {
-                      newMessages[newMessages.length - 1] = {
-                        role: 'assistant',
-                        content: assistantMessage
-                      };
-                    } else {
-                      newMessages.push({ role: 'assistant', content: assistantMessage });
-                    }
-                    return newMessages;
-                  });
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6).trim();
+                if (data === '[DONE]') {
+                  // Stream completed successfully
+                  break;
                 }
-              } catch (e) {
-                // Skip invalid JSON
+
+                if (data) {
+                  try {
+                    const parsed = JSON.parse(data);
+                    if (parsed.error) {
+                      throw new Error(parsed.error);
+                    }
+                    if (parsed.content) {
+                      assistantMessage += parsed.content;
+                      setMessages((prev) => {
+                        const newMessages = [...prev];
+                        const lastMessage = newMessages[newMessages.length - 1];
+                        if (lastMessage?.role === 'assistant') {
+                          newMessages[newMessages.length - 1] = {
+                            role: 'assistant',
+                            content: assistantMessage
+                          };
+                        } else {
+                          newMessages.push({ role: 'assistant', content: assistantMessage });
+                        }
+                        return newMessages;
+                      });
+                    }
+                  } catch (e) {
+                    // Skip invalid JSON - might be empty lines
+                    if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
+                      console.debug('Skipping line:', data);
+                    }
+                  }
+                }
               }
             }
           }
+        } catch (streamError) {
+          console.error('Stream reading error:', streamError);
+          throw streamError;
+        } finally {
+          reader.releaseLock();
         }
+      }
+
+      // If we have content, make sure it's in the messages
+      if (assistantMessage) {
+        setMessages((prev) => {
+          const newMessages = [...prev];
+          const lastMessage = newMessages[newMessages.length - 1];
+          if (lastMessage?.role === 'assistant') {
+            newMessages[newMessages.length - 1] = {
+              role: 'assistant',
+              content: assistantMessage
+            };
+          }
+          return newMessages;
+        });
       }
     } catch (error) {
       console.error('Chat error:', error);
-      setMessages((prev) => [
-        ...prev,
-        {
+      // Remove the empty assistant message and add error message
+      setMessages((prev) => {
+        const newMessages = prev.slice(0, -1); // Remove last (empty) message
+        newMessages.push({
           role: 'assistant',
-          content: 'Sorry, I encountered an error. Please try again.'
-        }
-      ]);
+          content: error instanceof Error ? `Error: ${error.message}` : 'Sorry, I encountered an error. Please try again.'
+        });
+        return newMessages;
+      });
     } finally {
       setLoading(false);
     }
@@ -124,15 +173,17 @@ export function ChatBox({ systemPrompt }: ChatBoxProps) {
               key={idx}
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <div
-                className={`max-w-[85%] sm:max-w-[80%] rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base ${
-                  msg.role === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground'
-                }`}
-              >
-                {msg.content}
-              </div>
+              {msg.content && (
+                <div
+                  className={`max-w-[85%] sm:max-w-[80%] rounded-lg px-3 sm:px-4 py-2 text-sm sm:text-base ${
+                    msg.role === 'user'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {msg.content}
+                </div>
+              )}
             </div>
           ))}
           {loading && (

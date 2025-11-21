@@ -54,14 +54,24 @@ export async function POST(req: NextRequest) {
       async start(controller) {
         const reader = response.body?.getReader();
         const decoder = new TextDecoder();
+        let buffer = '';
 
         try {
           while (true) {
             const { done, value } = await reader!.read();
-            if (done) break;
+            if (done) {
+              // Send final [DONE] message before closing
+              controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+              controller.close();
+              return;
+            }
 
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split('\n');
+            // Decode and add to buffer
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            
+            // Keep the last incomplete line in buffer
+            buffer = lines.pop() || '';
 
             for (const line of lines) {
               if (line.startsWith('data: ')) {
@@ -72,23 +82,34 @@ export async function POST(req: NextRequest) {
                   return;
                 }
 
-                try {
-                  const parsed = JSON.parse(data);
-                  const content = parsed.choices?.[0]?.delta?.content;
-                  if (content) {
-                    controller.enqueue(
-                      new TextEncoder().encode(`data: ${JSON.stringify({ content })}\n\n`)
-                    );
+                if (data) {
+                  try {
+                    const parsed = JSON.parse(data);
+                    const content = parsed.choices?.[0]?.delta?.content;
+                    if (content) {
+                      controller.enqueue(
+                        new TextEncoder().encode(`data: ${JSON.stringify({ content })}\n\n`)
+                      );
+                    }
+                  } catch (e) {
+                    // Skip invalid JSON - might be empty lines or other data
+                    console.debug('Skipping invalid JSON:', data);
                   }
-                } catch (e) {
-                  // Skip invalid JSON
                 }
               }
             }
           }
         } catch (error) {
           console.error('Streaming error:', error);
-        } finally {
+          // Send error message and close gracefully
+          try {
+            controller.enqueue(
+              new TextEncoder().encode(`data: ${JSON.stringify({ error: 'Stream error' })}\n\n`)
+            );
+            controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+          } catch (e) {
+            // Ignore errors when closing
+          }
           controller.close();
         }
       }
