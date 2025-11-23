@@ -56,7 +56,10 @@ export async function getSchools(filters?: SchoolFilters) {
 
   const { data, error } = await query.order('name');
 
-  if (error) throw error;
+  if (error) {
+    console.error('Supabase query error:', error);
+    throw error;
+  }
 
   // Filter by required courses in memory (Supabase array filtering is limited)
   if (filters?.requiredCourses && filters.requiredCourses.length > 0) {

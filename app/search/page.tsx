@@ -34,6 +34,7 @@ export default function SearchPage() {
         setSchools(results);
       } catch (error) {
         console.error('Error fetching schools:', error);
+        setSchools([]); // Clear schools on error
       } finally {
         setLoading(false);
       }
