@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "verify-import": "tsx scripts/verify-supabase-import.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.0.2",

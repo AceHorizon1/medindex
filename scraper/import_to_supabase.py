@@ -130,5 +130,9 @@ def import_csv_to_supabase(csv_file='scraped_schools.csv'):
 
 
 if __name__ == '__main__':
-    import_csv_to_supabase()
+    import sys
+    csv_file = sys.argv[1] if len(sys.argv) > 1 else None
+    if not csv_file:
+        csv_file = 'scraped_schools_cyberscraper.csv' if os.path.exists('scraped_schools_cyberscraper.csv') else 'scraped_schools.csv'
+    import_csv_to_supabase(csv_file)
 
