@@ -26,6 +26,7 @@ async-lru>=2.1.0
 # Utilities
 python-dotenv>=1.2.1
 
-# Supabase (for importing)
+# Database (for importing)
 supabase>=2.0.0
+libsql-client>=0.3.0
 

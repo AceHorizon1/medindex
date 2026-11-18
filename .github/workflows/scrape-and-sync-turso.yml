@@ -1,0 +1,63 @@
+name: Scrape Medical Schools & Sync to Turso
+
+on:
+  schedule:
+    # Runs automatically on the 1st of every month at 02:00 UTC
+    - cron: '0 2 1 * *'
+  workflow_dispatch:
+    inputs:
+      max_schools:
+        description: 'Maximum number of schools to scrape (leave empty for all)'
+        required: false
+        default: ''
+
+jobs:
+  scrape-and-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: 'pip'
+          cache-dependency-path: scraper/requirements_cyberscraper.txt
+
+      - name: Install dependencies
+        working-directory: scraper
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements_cyberscraper.txt
+          pip install libsql-client python-dotenv playwright patchright
+          python -m playwright install --with-deps chromium
+
+      - name: Run Web Scraper
+        working-directory: scraper
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          MAX_ARG=""
+          if [ -n "${{ github.event.inputs.max_schools }}" ]; then
+            MAX_ARG="--max ${{ github.event.inputs.max_schools }}"
+          fi
+          python cyberscraper_scraper.py --openrouter --model liquid/lfm-2.5-1.2b-thinking:free --delay 2.0 $MAX_ARG
+
+      - name: Sync Data to Turso Database
+        working-directory: scraper
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: |
+          python import_to_turso.py
+
+      - name: Upload Scraped CSV as Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: scraped-medical-schools-${{ github.run_id }}
+          path: scraper/scraped_schools_cyberscraper.csv
+          retention-days: 30

@@ -1,4 +1,5 @@
 *.csv
+!schools_urls.csv
 *.json
 __pycache__/
 *.pyc
