@@ -1,23 +1,60 @@
 import { NextRequest } from 'next/server';
+import fs from 'fs';
+import path from 'path';
+import { extractTextFromPdf } from '@/lib/pdf';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-// Free Chinese models on OpenRouter
-const CHINESE_FREE_MODELS = [
+// Free Chinese models for text
+const CHINESE_FREE_TEXT_MODELS = [
   'baidu/ernie-5.5-flash-preview:free',
   'inclusionai/ling-3.2-flash:free',
 ];
 
+// Free vision models for image analysis
+const FREE_VISION_MODELS = [
+  'nvidia/nemotron-3.5-super-vl:free',
+  'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free',
+];
+
+interface Attachment {
+  name: string;
+  type: string;
+  data: string; // Base64 data or data URL
+}
+
+type MessageContent =
+  | string
+  | Array<
+      | { type: 'text'; text: string }
+      | { type: 'image_url'; image_url: { url: string } }
+    >;
+
+interface Message {
+  role: 'system' | 'user' | 'assistant';
+  content: MessageContent;
+}
+
+function getAdvisorInstructions(): string {
+  try {
+    const configPath = path.join(process.cwd(), 'config', 'advisor-instructions.md');
+    if (fs.existsSync(configPath)) {
+      return fs.readFileSync(configPath, 'utf-8');
+    }
+  } catch (e) {
+    console.warn('Could not read config/advisor-instructions.md:', e);
+  }
+  return `You are an experienced medical school admissions advisor with deep knowledge of MD and DO programs, application processes, MCAT preparation, and pre-medical education. Provide helpful, accurate, and encouraging guidance. Be concise but thorough, and always prioritize the student's best interests.`;
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { messages, systemPrompt } = await req.json();
+    const body = await req.json();
+    const { messages = [], attachments = [], systemPrompt } = body;
 
     const openrouterKey = process.env.OPENROUTER_API_KEY;
     const hfKey = process.env.HUGGINGFACE_API_TOKEN;
-    const requestedModel =
-      process.env.CHAT_MODEL ||
-      process.env.OPENROUTER_MODEL ||
-      'baidu/ernie-5.5-flash-preview:free';
 
     if (!openrouterKey && !hfKey) {
       return new Response(
@@ -29,15 +66,95 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const formattedMessages = systemPrompt
-      ? [{ role: 'system', content: systemPrompt }, ...messages]
-      : messages;
+    // Process in-memory attachments for the current message
+    let pdfExtractedText = '';
+    const imageAttachments: string[] = [];
 
-    if (openrouterKey) {
-      return await callOpenRouterStreaming(openrouterKey, requestedModel, formattedMessages);
+    for (const file of attachments as Attachment[]) {
+      if (!file.data) continue;
+
+      if (file.type === 'application/pdf' || file.name?.toLowerCase().endsWith('.pdf')) {
+        try {
+          // Extract base64 payload from data URL if needed
+          const base64Data = file.data.includes(',')
+            ? file.data.split(',')[1]
+            : file.data;
+          const pdfBuffer = Buffer.from(base64Data, 'base64');
+          const parsedText = await extractTextFromPdf(pdfBuffer);
+
+          if (parsedText) {
+            pdfExtractedText += `\n\n--- [Attached Document: ${file.name} (Parsed In-Memory)] ---\n${parsedText}\n--- [End of ${file.name}] ---`;
+          } else {
+            pdfExtractedText += `\n\n[Notice: ${file.name} appears to be a scanned image or empty PDF. No selectable text was extracted.]`;
+          }
+        } catch (pdfErr) {
+          console.error(`Failed to parse PDF ${file.name}:`, pdfErr);
+          pdfExtractedText += `\n\n[Error reading ${file.name} in-memory]`;
+        }
+      } else if (file.type.startsWith('image/') || /\.(png|jpe?g|webp|gif)$/i.test(file.name)) {
+        // Ensure data has the correct data URL format
+        const dataUrl = file.data.startsWith('data:')
+          ? file.data
+          : `data:${file.type || 'image/png'};base64,${file.data}`;
+        imageAttachments.push(dataUrl);
+      }
     }
 
-    return await callHuggingFace(hfKey!, requestedModel, formattedMessages);
+    // Format messages for LLM
+    const formattedMessages: Message[] = [];
+
+    // 1. Add System Instructions (from config/advisor-instructions.md)
+    const baseInstructions = getAdvisorInstructions();
+    const fullSystemPrompt = systemPrompt
+      ? `${baseInstructions}\n\n### Session Specific Context\n${systemPrompt}`
+      : baseInstructions;
+
+    formattedMessages.push({ role: 'system', content: fullSystemPrompt });
+
+    // 2. Add conversation history
+    for (let i = 0; i < messages.length; i++) {
+      const msg = messages[i];
+      const isLastUserMessage = i === messages.length - 1 && msg.role === 'user';
+
+      if (isLastUserMessage) {
+        let textContent = typeof msg.content === 'string' ? msg.content : '';
+        if (pdfExtractedText) {
+          textContent = `${textContent}${pdfExtractedText}`.trim();
+        }
+
+        if (imageAttachments.length > 0) {
+          const parts: Array<
+            | { type: 'text'; text: string }
+            | { type: 'image_url'; image_url: { url: string } }
+          > = [{ type: 'text', text: textContent || 'Please analyze this uploaded document.' }];
+
+          for (const imgUrl of imageAttachments) {
+            parts.push({ type: 'image_url', image_url: { url: imgUrl } });
+          }
+
+          formattedMessages.push({ role: 'user', content: parts });
+        } else {
+          formattedMessages.push({ role: 'user', content: textContent });
+        }
+      } else {
+        formattedMessages.push({ role: msg.role, content: msg.content });
+      }
+    }
+
+    // Detect if vision model is required
+    const requiresVision = formattedMessages.some(
+      (m) => Array.isArray(m.content) && m.content.some((c) => c.type === 'image_url')
+    );
+
+    if (openrouterKey) {
+      return await callOpenRouterStreaming({
+        apiKey: openrouterKey,
+        messages: formattedMessages,
+        isVision: requiresVision,
+      });
+    }
+
+    return await callHuggingFace(hfKey!, formattedMessages);
   } catch (error: any) {
     console.error('Chat API error:', error);
     return new Response(
@@ -47,12 +164,25 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function callOpenRouterStreaming(
-  apiKey: string,
-  model: string,
-  messages: Array<{ role: string; content: string }>
-) {
-  const modelsToTry = [model, ...CHINESE_FREE_MODELS.filter((m) => m !== model)];
+async function callOpenRouterStreaming({
+  apiKey,
+  messages,
+  isVision,
+}: {
+  apiKey: string;
+  messages: Message[];
+  isVision: boolean;
+}) {
+  let modelsToTry: string[];
+
+  if (isVision) {
+    modelsToTry = FREE_VISION_MODELS;
+  } else {
+    const configured = process.env.CHAT_MODEL || process.env.OPENROUTER_MODEL;
+    modelsToTry = configured
+      ? [configured, ...CHINESE_FREE_TEXT_MODELS.filter((m) => m !== configured)]
+      : CHINESE_FREE_TEXT_MODELS;
+  }
 
   for (const currentModel of modelsToTry) {
     try {
@@ -150,26 +280,32 @@ async function callOpenRouterStreaming(
   throw new Error('All model attempts failed. Please try again.');
 }
 
-async function callHuggingFace(
-  apiKey: string,
-  model: string,
-  messages: Array<{ role: string; content: string }>
-) {
-  const prompt = messages
-    .map((msg) => `${msg.role}: ${msg.content}\n\n`)
-    .join('') + 'Assistant:';
+async function callHuggingFace(apiKey: string, messages: Message[]) {
+  const prompt =
+    messages
+      .map((msg) => {
+        const text =
+          typeof msg.content === 'string'
+            ? msg.content
+            : msg.content.map((c) => ('text' in c ? c.text : '')).join(' ');
+        return `${msg.role}: ${text}\n\n`;
+      })
+      .join('') + 'Assistant:';
 
-  const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      inputs: prompt,
-      parameters: { max_new_tokens: 512, temperature: 0.7 },
-    }),
-  });
+  const response = await fetch(
+    'https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3-8B-Instruct',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        inputs: prompt,
+        parameters: { max_new_tokens: 512, temperature: 0.7 },
+      }),
+    }
+  );
 
   if (!response.ok) {
     throw new Error(`Hugging Face error: ${response.statusText}`);

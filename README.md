@@ -11,7 +11,10 @@ A modern, full-stack Next.js 14 application for pre-med students to search, comp
 - **Automated Web Scraping & Data Refresh**: Periodic GitHub Actions pipeline that automatically crawls official admissions pages and updates the database.
 - **School Profiles**: Detailed pages with prerequisites, admissions statistics, tuition, mission statements, deadlines, and official links.
 - **Side-by-Side Comparison**: Compare multiple schools side-by-side with detailed metrics.
-- **AI-Powered Advisor**: Interactive chat with an AI pre-med advisor powered by Hugging Face inference models.
+- **AI-Powered Advisor**: Interactive pre-med admissions counseling powered by high-performance models (Baidu ERNIE / OpenRouter) with customizable instructions and vision models.
+- **Transcript & Score Report Review**: Upload PDF transcripts, resumes, and PNG/JPG score report screenshots directly in chat.
+- **100% Ephemeral & Private**: Transcripts and images are analyzed purely in-memory (RAM) and are never saved to any database, disk, or external cloud bucket.
+- **Customizable Advisor Instructions**: Fine-tune the AI advisor's grading rules, recommendations, and evaluation criteria simply by editing `config/advisor-instructions.md`.
 - **Responsive & Dark Mode**: Mobile-friendly, polished UI built with TailwindCSS and shadcn components.
 
 ---
@@ -22,7 +25,8 @@ A modern, full-stack Next.js 14 application for pre-med students to search, comp
 - **Database**: [Turso](https://turso.tech) (LibSQL / SQLite at the Edge)
 - **Data Automation & Scraping**: GitHub Actions, Playwright, Patchright, and OpenRouter LLM extraction
 - **Styling**: TailwindCSS + shadcn/ui + Radix UI
-- **AI Advisor**: Hugging Face Inference API (`Qwen/Qwen2.5-7B-Instruct`)
+- **AI Advisor**: OpenRouter (`baidu/ernie-5.5-flash-preview:free`, `nvidia/nemotron-3.5-super-vl:free` for vision)
+- **In-Memory Document Parsing**: `pdf-parse` (RAM-only extraction)
 - **Deployment**: Netlify / Vercel
 
 ---
@@ -111,7 +115,10 @@ In your GitHub repository under **Settings** → **Secrets and variables** → *
 │   ├── SchoolFilters.tsx  # Multi-parameter filter sidebar
 │   ├── SchoolTable.tsx    # Comparison table
 │   └── ChatBox.tsx        # Pre-med advisor chat widget
+├── config/
+│   └── advisor-instructions.md   # Customizable admissions counseling rules & guidelines
 ├── lib/
+│   ├── pdf.ts             # In-memory ephemeral PDF text extraction
 │   ├── turso/             # Turso LibSQL client & database queries
 │   │   ├── client.ts      # Lazy-loaded database client
 │   │   └── queries.ts     # getSchools, getSchoolById, favorites
