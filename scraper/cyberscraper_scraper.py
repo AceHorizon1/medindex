@@ -584,13 +584,13 @@ async def main():
         
         # Default to free model if not specified
         if not args.model:
-            args.model = 'liquid/lfm-2.5-1.2b-thinking:free'
+            args.model = 'liquid/lfm-3-1.7b:free'
             logger.info(f"Using default free model: {args.model}")
         
         # Warn if using non-free model
         if ':free' not in args.model.lower():
             logger.warning(f"⚠️  Model '{args.model}' may not be free.")
-            logger.warning("   Free models include: liquid/lfm-2.5-1.2b-thinking:free, meta-llama/llama-3.2-3b-instruct:free, google/gemini-flash-1.5:free")
+            logger.warning("   Free models include: liquid/lfm-3-1.7b:free, google/gemma-4-31b-it:free")
             logger.warning("   See FREE_MODELS.md for complete list of free models")
     else:
         api_key = os.getenv('OPENAI_API_KEY') or os.getenv('GOOGLE_API_KEY')
@@ -606,7 +606,7 @@ async def main():
     
     # Initialize scraper
     scraper = MedIndexScraper(
-        model_name=args.model or 'liquid/lfm-2.5-1.2b-thinking:free',
+        model_name=args.model or 'liquid/lfm-3-1.7b:free',
         headless=not args.no_headless,
         use_openrouter=args.openrouter,
         openrouter_api_key=args.openrouter_key

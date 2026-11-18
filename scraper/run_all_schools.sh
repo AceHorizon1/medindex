@@ -23,7 +23,7 @@ fi
 
 echo "Scraping all schools (OpenRouter free model)..."
 echo "This may take 1–1.5 hours for ~30 schools."
-python cyberscraper_scraper.py --openrouter --model liquid/lfm-2.5-1.2b-thinking:free --delay 2.0
+python cyberscraper_scraper.py --openrouter --model liquid/lfm-3-1.7b:free --delay 2.0
 
 echo ""
 echo "Output: scraped_schools_cyberscraper.csv"

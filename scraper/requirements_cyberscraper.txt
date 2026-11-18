@@ -22,6 +22,7 @@ lxml>=6.0.2
 aiohttp>=3.13.3
 aiohttp-socks>=0.11.0
 async-lru>=2.1.0
+aioconsole>=0.8.2
 
 # Utilities
 python-dotenv>=1.2.1

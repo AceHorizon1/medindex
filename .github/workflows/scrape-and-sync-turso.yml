@@ -36,8 +36,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements_cyberscraper.txt
-          pip install libsql-client python-dotenv playwright patchright
-          python -m playwright install --with-deps chromium
+          if [ -f "CyberScraper-2077/requirements.txt" ]; then
+            pip install -r CyberScraper-2077/requirements.txt
+          fi
+          pip install libsql-client python-dotenv playwright patchright aioconsole
+          python -m patchright install --with-deps chromium || true
+          python -m playwright install --with-deps chromium || true
 
       - name: Run Web Scraper
         working-directory: scraper
@@ -48,7 +52,7 @@ jobs:
           if [ -n "${{ github.event.inputs.max_schools }}" ]; then
             MAX_ARG="--max ${{ github.event.inputs.max_schools }}"
           fi
-          python cyberscraper_scraper.py --openrouter --model liquid/lfm-2.5-1.2b-thinking:free --delay 2.0 $MAX_ARG
+          python cyberscraper_scraper.py --openrouter --model liquid/lfm-3-1.7b:free --delay 2.0 $MAX_ARG
 
       - name: Sync Data to Turso Database
         working-directory: scraper
