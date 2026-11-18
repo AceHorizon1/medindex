@@ -1,177 +1,138 @@
 # MedIndex
 
-A full-stack Next.js 14 application for pre-med students to search, compare, and get AI-guided insights on U.S. MD/DO medical schools.
+A modern, full-stack Next.js 14 application for pre-med students to search, compare, and get AI-guided insights on U.S. MD/DO medical schools. Powered by **Turso (LibSQL)** at the edge and kept fresh with automated **GitHub Actions** web scraping.
+
+---
 
 ## Features
 
-- **Comprehensive School Database**: Search and filter 20+ medical schools by GPA, MCAT, tuition, type (MD/DO), and required courses
-- **School Profiles**: Detailed pages with requirements, stats, tuition, mission statements, deadlines, and external links
-- **Side-by-Side Comparison**: Compare two schools with detailed metrics
-- **AI-Powered Advisor**: Chat with an AI advisor powered by Hugging Face (Qwen2.5-7B-Instruct)
-- **Dark Mode**: Toggle between light and dark themes
-- **Authentication**: Save favorite schools with Supabase Auth
-- **Responsive Design**: Mobile-friendly UI built with TailwindCSS and shadcn components
+- **Comprehensive School Database**: Search and filter medical schools by GPA, MCAT, tuition, type (MD/DO), and required courses.
+- **Always Active Database**: Powered by Turso (distributed SQLite at the edge) — never pauses or deletes after periods of inactivity.
+- **Automated Web Scraping & Data Refresh**: Periodic GitHub Actions pipeline that automatically crawls official admissions pages and updates the database.
+- **School Profiles**: Detailed pages with prerequisites, admissions statistics, tuition, mission statements, deadlines, and official links.
+- **Side-by-Side Comparison**: Compare multiple schools side-by-side with detailed metrics.
+- **AI-Powered Advisor**: Interactive chat with an AI pre-med advisor powered by Hugging Face inference models.
+- **Responsive & Dark Mode**: Mobile-friendly, polished UI built with TailwindCSS and shadcn components.
+
+---
 
 ## Tech Stack
 
 - **Framework**: Next.js 14 (App Router)
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth
-- **Styling**: TailwindCSS + shadcn/ui
-- **AI**: Hugging Face Inference API (Qwen2.5-7B-Instruct)
-- **Deployment**: Netlify (frontend), Render (backend if needed)
+- **Database**: [Turso](https://turso.tech) (LibSQL / SQLite at the Edge)
+- **Data Automation & Scraping**: GitHub Actions, Playwright, Patchright, and OpenRouter LLM extraction
+- **Styling**: TailwindCSS + shadcn/ui + Radix UI
+- **AI Advisor**: Hugging Face Inference API (`Qwen/Qwen2.5-7B-Instruct`)
+- **Deployment**: Netlify / Vercel
 
-## Setup
+---
 
-1. **Install dependencies**:
-   ```bash
-   npm install
-   ```
+## Getting Started
 
-2. **Set up Supabase**:
-   - Create a new Supabase project at https://supabase.com
-   - Run this SQL in the Supabase SQL editor:
+### 1. Clone & Install Dependencies
 
-   ```sql
-   -- Create schools table
-   CREATE TABLE schools (
-     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-     name TEXT UNIQUE NOT NULL,
-     type TEXT NOT NULL CHECK (type IN ('MD', 'DO')),
-     location TEXT NOT NULL,
-     tuition INTEGER,
-     avg_gpa NUMERIC(3,2),
-     avg_mcat INTEGER,
-     required_courses TEXT[],
-     mission TEXT,
-     deadlines JSONB,
-     link TEXT,
-     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-   );
+```bash
+git clone https://github.com/AceHorizon1/medindex.git
+cd medindex
+npm install
+```
 
-   -- Create favorites table
-   CREATE TABLE favorites (
-     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-     school_id UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
-     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-     UNIQUE(user_id, school_id)
-   );
+### 2. Configure Environment Variables
 
-   -- Enable Row Level Security
-   ALTER TABLE schools ENABLE ROW LEVEL SECURITY;
-   ALTER TABLE favorites ENABLE ROW LEVEL SECURITY;
+Create a `.env.local` file in the root directory:
 
-   -- Policies for schools (public read)
-   CREATE POLICY "Schools are viewable by everyone" ON schools
-     FOR SELECT USING (true);
+```env
+# Turso Database
+TURSO_DATABASE_URL=libsql://medindex-yourname.turso.io
+TURSO_AUTH_TOKEN=your-turso-auth-token
 
-   -- Policies for favorites
-   CREATE POLICY "Users can view own favorites" ON favorites
-     FOR SELECT USING (auth.uid() = user_id);
-   
-   CREATE POLICY "Users can insert own favorites" ON favorites
-     FOR INSERT WITH CHECK (auth.uid() = user_id);
-   
-   CREATE POLICY "Users can delete own favorites" ON favorites
-     FOR DELETE USING (auth.uid() = user_id);
-   ```
+# Hugging Face AI Advisor
+HUGGINGFACE_API_TOKEN=your_hf_token
+HUGGINGFACE_MODEL=Qwen/Qwen2.5-7B-Instruct
 
-3. **Get a Hugging Face API Token**:
-   - Go to https://huggingface.co/settings/tokens
-   - Create a new token with "Read" permissions
-   - Copy the token
+# OpenRouter (optional, for web scraper)
+OPENROUTER_API_KEY=your_openrouter_api_key
+```
 
-4. **Configure environment variables**:
-   - Create a `.env.local` file in the root directory
-   - Add your Supabase credentials:
-     ```
-     NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-     NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-     ```
-   - Add your Hugging Face API token:
-     ```
-     HUGGINGFACE_API_TOKEN=your_hf_token
-     ```
-   - Optionally customize the model (defaults to Qwen2.5-7B-Instruct):
-     ```
-     HUGGINGFACE_MODEL=Qwen/Qwen2.5-7B-Instruct
-     ```
+### 3. Initialize Turso Database Schema
 
-5. **Seed the database**:
-   ```bash
-   npm run seed
-   ```
+Run the SQL commands from `turso-schema.sql` in the Turso CLI or Web Dashboard:
 
-6. **Run the development server**:
-   ```bash
-   npm run dev
-   ```
+```bash
+turso db shell medindex < turso-schema.sql
+```
 
-7. **Open** [http://localhost:3000](http://localhost:3000)
+Verify your connection and inspect data:
+```bash
+npm run verify-turso
+```
 
-## AI Model Configuration
+### 4. Run Development Server
 
-The app uses Hugging Face's Inference Providers API, which provides:
-- **Automatic provider selection**: The API automatically routes requests to the best available provider
-- **OpenAI-compatible API**: Works seamlessly with streaming chat completions
-- **Free tier available**: Many models have free inference options
+```bash
+npm run dev
+```
 
-**Default Model**: `Qwen/Qwen2.5-7B-Instruct`
-- High-quality conversational model
-- Good for medical school advising
-- Free inference available
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-**Alternative Models** (you can change via `HUGGINGFACE_MODEL` env var):
-- `mistralai/Mistral-7B-Instruct-v0.2`
-- `meta-llama/Llama-3.1-8B-Instruct`
-- `Qwen/Qwen2.5-14B-Instruct` (larger, more capable)
+---
 
-## Deployment
+## Automated Data Pipeline (GitHub Actions)
 
-### Netlify
+MedIndex uses GitHub Actions (`.github/workflows/scrape-and-sync-turso.yml`) to keep medical school data up to date automatically:
 
-1. Connect your GitHub repository to Netlify
-2. Set build command: `npm run build`
-3. Set publish directory: `.next`
-4. Add environment variables in Netlify dashboard:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `HUGGINGFACE_API_TOKEN`
-   - `HUGGINGFACE_MODEL` (optional)
-5. Deploy!
+1. **Schedule**: Runs automatically on the **1st of every month at 02:00 UTC** (or manually via **Actions** → **Run workflow**).
+2. **Scraper**: Uses CyberScraper with Playwright and OpenRouter to extract admissions criteria, median stats, and requirements from school websites (`scraper/schools_urls.csv`).
+3. **Turso Upsert**: Runs `scraper/import_to_turso.py` to seamlessly update the live database with zero downtime and without duplicates.
 
-The `netlify.toml` file is already configured.
+### Setting Up GitHub Actions Secrets
+In your GitHub repository under **Settings** → **Secrets and variables** → **Actions**, add:
+- `TURSO_DATABASE_URL`
+- `TURSO_AUTH_TOKEN`
+- `OPENROUTER_API_KEY`
+
+---
 
 ## Project Structure
 
 ```
 ├── app/
-│   ├── api/chat/          # AI chat API route (Hugging Face)
-│   ├── auth/              # Authentication pages
-│   ├── compare/           # School comparison page
-│   ├── school/[id]/       # Individual school profile
-│   ├── search/            # School search page
 │   ├── advisor/           # AI advisor chat page
-│   └── layout.tsx         # Root layout with NavBar
+│   ├── api/chat/          # AI chat route (Hugging Face)
+│   ├── auth/              # Authentication pages
+│   ├── compare/           # School comparison tool
+│   ├── school/[id]/       # Detailed school profile view
+│   ├── search/            # Interactive filter & search interface
+│   └── layout.tsx         # Root layout with navigation & theme providers
 ├── components/
-│   ├── ui/                # shadcn components
-│   ├── NavBar.tsx         # Navigation component
-│   ├── SchoolCard.tsx     # School card component
-│   ├── SchoolFilters.tsx  # Filter component
+│   ├── ui/                # UI primitives (buttons, dialogs, inputs)
+│   ├── NavBar.tsx         # Header navigation
+│   ├── SchoolCard.tsx     # Card view for individual schools
+│   ├── SchoolFilters.tsx  # Multi-parameter filter sidebar
 │   ├── SchoolTable.tsx    # Comparison table
-│   ├── ChatBox.tsx        # AI chat component
-│   ├── ThemeProvider.tsx  # Dark mode provider
-│   ├── ThemeToggle.tsx    # Dark mode toggle
-│   └── Footer.tsx         # Footer component
+│   └── ChatBox.tsx        # Pre-med advisor chat widget
 ├── lib/
-│   ├── supabase/          # Supabase client & queries
-│   └── utils.ts            # Utility functions
-└── scripts/
-    └── seed.ts            # Database seed script
+│   ├── turso/             # Turso LibSQL client & database queries
+│   │   ├── client.ts      # Lazy-loaded database client
+│   │   └── queries.ts     # getSchools, getSchoolById, favorites
+│   └── utils.ts           # Class merge helpers
+├── scraper/
+│   ├── cyberscraper_scraper.py   # Web scraper with Playwright & LLM extraction
+│   ├── import_to_turso.py        # CSV to Turso upsert pipeline
+│   ├── schools_urls.csv          # Target school directory & URLs
+│   └── run_all_schools.sh        # Local runner script
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                        # Code quality & build verification
+│       └── scrape-and-sync-turso.yml     # Scheduled monthly scraper & Turso sync
+├── scripts/
+│   ├── seed.ts            # Seed data source (29 medical schools)
+│   └── verify-turso.ts    # Database query verification script
+└── turso-schema.sql       # SQLite / Turso database schema
 ```
+
+---
 
 ## License
 
-MIT
+[MIT](LICENSE)
