@@ -20,6 +20,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Clone CyberScraper-2077 engine
+        run: |
+          git clone --depth 1 https://github.com/itsOwen/CyberScraper-2077.git scraper/CyberScraper-2077
+
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:

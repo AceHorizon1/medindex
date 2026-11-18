@@ -12,8 +12,11 @@ from typing import Dict, List, Optional, Any
 import logging
 
 # Add CyberScraper-2077 to path
-cyberscraper_path = Path(__file__).parent.parent.parent / "CyberScraper-2077"
-sys.path.insert(0, str(cyberscraper_path))
+cyberscraper_path = Path(__file__).parent / "CyberScraper-2077"
+if not cyberscraper_path.exists():
+    cyberscraper_path = Path(__file__).parent.parent.parent / "CyberScraper-2077"
+if cyberscraper_path.exists():
+    sys.path.insert(0, str(cyberscraper_path))
 
 # Monkey patch to force Chromium instead of Chrome
 import src.scrapers.playwright_scraper as playwright_scraper_module
