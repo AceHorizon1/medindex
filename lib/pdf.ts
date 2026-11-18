@@ -1,3 +1,8 @@
+// Polyfill Iterator for Node < 22 environments (e.g. Netlify Node 20 runtime)
+if (typeof (globalThis as any).Iterator === 'undefined') {
+  (globalThis as any).Iterator = class Iterator {};
+}
+
 import { extractText } from 'unpdf';
 
 /**
